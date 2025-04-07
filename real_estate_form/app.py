@@ -275,6 +275,53 @@ st.markdown(f'<div class="logo-container"><img src="data:image/jpeg;base64,{get_
 st.markdown('<h2 class="sub-header">Property Inquiry Form</h2>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
+# Form submission handler function
+def handle_form_submission():
+    # Store form data in session state
+    st.session_state.form_data = {
+        "Report Date": report_date.strftime("%Y-%m-%d"),
+        "Client Name": client_name,
+        "Client Phone": client_phone,
+        "Unit Type": unit_type,
+        "Floor Type": floor_type,
+        "Unit Area": f"{min_unit_area} - {max_unit_area} m²",
+        "Number of Rooms": num_rooms,
+        "Number of Bathrooms": num_bathrooms,
+        "Finishing Type": finishing_type,
+        "Area": area,
+        "Budget": f"{budget:,} EGP",
+        "Payment Method": payment_method,
+        "Delivery Date": delivery_date.strftime("%Y-%m-%d")
+    }
+    
+    # Save the form data to a JSON file for record keeping
+    try:
+        # Create a directory for submissions if it doesn't exist
+        submissions_dir = os.path.join(os.path.dirname(__file__), "submissions")
+        os.makedirs(submissions_dir, exist_ok=True)
+        
+        # Generate a unique filename based on timestamp and client name
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_name = ''.join(c if c.isalnum() else '_' for c in client_name)
+        filename = f"{timestamp}_{safe_name}.json"
+        
+        # Save the data
+        with open(os.path.join(submissions_dir, filename), 'w') as f:
+            json.dump(st.session_state.form_data, f, indent=4)
+    except Exception:
+        pass  # Silently handle file saving errors
+    
+    # Mark form as submitted
+    st.session_state.form_submitted = True
+    
+    # Send email immediately without displaying any output
+    try:
+        send_inquiry_email(st.session_state.form_data)
+        st.session_state.email_sent = True
+    except:
+        # Silently handle email sending errors
+        st.session_state.email_sent = False
+
 # Only show the form if not submitted
 if not st.session_state.form_submitted:
     # Form inputs
@@ -382,48 +429,8 @@ if not st.session_state.form_submitted:
             if not client_name or not client_phone:
                 st.error("Please fill in all required fields: Client Name and Phone Number")
             else:
-                # Store form data in session state
-                st.session_state.form_data = {
-                    "Report Date": report_date.strftime("%Y-%m-%d"),
-                    "Client Name": client_name,
-                    "Client Phone": client_phone,
-                    "Unit Type": unit_type,
-                    "Floor Type": floor_type,
-                    "Unit Area": f"{min_unit_area} - {max_unit_area} m²",
-                    "Number of Rooms": num_rooms,
-                    "Number of Bathrooms": num_bathrooms,
-                    "Finishing Type": finishing_type,
-                    "Area": area,
-                    "Budget": f"{budget:,} EGP",
-                    "Payment Method": payment_method,
-                    "Delivery Date": delivery_date.strftime("%Y-%m-%d")
-                }
-                
-                # Save the form data to a JSON file for record keeping
-                try:
-                    # Create a directory for submissions if it doesn't exist
-                    submissions_dir = os.path.join(os.path.dirname(__file__), "submissions")
-                    os.makedirs(submissions_dir, exist_ok=True)
-                    
-                    # Generate a unique filename based on timestamp and client name
-                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                    safe_name = ''.join(c if c.isalnum() else '_' for c in client_name)
-                    filename = f"{timestamp}_{safe_name}.json"
-                    
-                    # Save the data
-                    with open(os.path.join(submissions_dir, filename), 'w') as f:
-                        json.dump(st.session_state.form_data, f, indent=4)
-                except Exception:
-                    pass  # Silently handle file saving errors
-                
-                # Mark form as submitted
-                st.session_state.form_submitted = True
-                
-                # Send email in background (will be processed on next rerun)
-                st.session_state.email_sent = False
-                
-                # Force a rerun to show the success page
-                st.experimental_rerun()
+                # Handle form submission
+                handle_form_submission()
 
 # If form is submitted, show success page
 if st.session_state.form_submitted:
@@ -442,13 +449,6 @@ if st.session_state.form_submitted:
     st.markdown('<div class="result-table">', unsafe_allow_html=True)
     st.table(df_transposed)
     st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Send email if not already sent
-    if not st.session_state.email_sent and st.session_state.form_data:
-        # Send email without displaying any output
-        email_success = send_inquiry_email(st.session_state.form_data)
-        # Mark email as sent regardless of success to prevent multiple attempts
-        st.session_state.email_sent = True
 
 # Footer
 st.markdown(f"""
