@@ -1,4 +1,4 @@
-import streamlit as st
+
 import datetime
 import smtplib
 from email.mime.text import MIMEText
@@ -446,7 +446,7 @@ if st.session_state.form_submitted:
             st.markdown('</div>', unsafe_allow_html=True)
             
             # In a production environment, uncomment this code to actually send the email
-           
+          
             with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
                 server.login("cpt.ahmed2018@gmail.com", "yndxitnnalocuqkd")
                 server.send_message(message)
