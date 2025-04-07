@@ -345,12 +345,9 @@ if st.session_state.form_submitted:
     st.table(df_transposed)
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # Send email function
+    # Send email function - completely rewritten to avoid displaying HTML content
     def send_email(form_data):
         try:
-            # Add debug logging to verify form_data
-            st.write("Debug - Form Data:", form_data)
-            
             # Email configuration
             sender_email = "noreply@alhayadevelopments.com"
             receiver_email = "cpt.ahmed2018@gmail.com"
@@ -361,8 +358,8 @@ if st.session_state.form_submitted:
             message["To"] = receiver_email
             message["Subject"] = f"New Property Inquiry from {form_data['Client Name']}"
             
-            # Email body
-            email_body = f"""
+            # Create email body HTML without displaying it
+            html_content = f"""
             <html>
             <head>
                 <style>
@@ -414,17 +411,16 @@ if st.session_state.form_submitted:
                     </tr>
             """
             
-            # Debug logging for form data items
+            # Add form data to email body without displaying it
             for key, value in form_data.items():
-                st.write(f"Debug - Adding to email: {key} = {value}")
-                email_body += f"""
+                html_content += f"""
                     <tr>
                         <td>{key}</td>
                         <td>{value}</td>
                     </tr>
                 """
             
-            email_body += """
+            html_content += """
                 </table>
                 <p>Please contact the client as soon as possible.</p>
                 <div class="footer">
@@ -434,31 +430,25 @@ if st.session_state.form_submitted:
             </html>
             """
             
-            # Attach the HTML content to the email
-            message.attach(MIMEText(email_body, "html"))
+            # Attach the HTML content to the email without displaying it
+            message.attach(MIMEText(html_content, "html"))
             
-            # For demonstration purposes, we'll show a preview of the email
-            st.markdown('<div class="email-preview">', unsafe_allow_html=True)
-            st.markdown('<div class="email-preview-header">Email Preview (Will be sent to cpt.ahmed2018@gmail.com)</div>', unsafe_allow_html=True)
-            st.markdown(f"<strong>Subject:</strong> New Property Inquiry from {form_data['Client Name']}", unsafe_allow_html=True)
-            st.markdown("<strong>Email Content:</strong>", unsafe_allow_html=True)
-            st.markdown(email_body, unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-            # In a production environment, uncomment this code to actually send the email
-         
+            # Send the email
             with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
                 server.login("cpt.ahmed2018@gmail.com", "yndxitnnalocuqkd")
                 server.send_message(message)
-       
             
             return True
         except Exception as e:
-            st.error(f"Error preparing email: {e}")
+            st.error(f"Error sending email: {e}")
             return False
     
-    # Send the email
-    send_email(st.session_state.form_data)
+    # Call the send_email function without displaying its return value
+    if send_email(st.session_state.form_data):
+        # Success message already displayed above
+        pass
+    else:
+        st.error("There was an issue sending the email. Please try again or contact support.")
 
 # Footer
 st.markdown(f"""
