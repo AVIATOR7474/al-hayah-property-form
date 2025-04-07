@@ -158,25 +158,115 @@ st.markdown(f"""
         margin-bottom: 20px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }}
-    /* Email preview section */
-    .email-preview {{
-        background-color: white;
-        padding: 20px;
-        border-radius: 10px;
-        margin: 20px 0;
-        border: 1px solid #e0e0e0;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }}
-    .email-preview-header {{
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: {accent_color};
-        margin-bottom: 10px;
-        border-bottom: 1px solid #e0e0e0;
-        padding-bottom: 10px;
-    }}
 </style>
 """, unsafe_allow_html=True)
+
+# Define email sending function outside of the main flow
+# This prevents it from being executed during UI rendering
+def send_inquiry_email(form_data):
+    try:
+        # Email configuration
+        sender_email = "noreply@alhayadevelopments.com"
+        receiver_email = "cpt.ahmed2018@gmail.com"
+        
+        # Create message
+        message = MIMEMultipart()
+        message["From"] = sender_email
+        message["To"] = receiver_email
+        message["Subject"] = f"New Property Inquiry from {form_data['Client Name']}"
+        
+        # Email body
+        html_content = f"""
+        <html>
+        <head>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                }}
+                .header {{
+                    background-color: {primary_color};
+                    color: white;
+                    padding: 20px;
+                    text-align: center;
+                }}
+                table {{
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin: 20px 0;
+                }}
+                th, td {{
+                    border: 1px solid #dddddd;
+                    text-align: left;
+                    padding: 12px;
+                }}
+                th {{
+                    background-color: {primary_color};
+                    color: white;
+                }}
+                tr:nth-child(even) {{
+                    background-color: #f9f9f9;
+                }}
+                .footer {{
+                    margin-top: 30px;
+                    font-size: 0.9em;
+                    color: #666;
+                    text-align: center;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h2>New Property Inquiry - Al Hayah Developments</h2>
+            </div>
+            <p>A new property inquiry has been submitted with the following details:</p>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Value</th>
+                </tr>
+        """
+        
+        # Add form data to email body
+        for key, value in form_data.items():
+            html_content += f"""
+                <tr>
+                    <td>{key}</td>
+                    <td>{value}</td>
+                </tr>
+            """
+        
+        html_content += """
+            </table>
+            <p>Please contact the client as soon as possible.</p>
+            <div class="footer">
+                <p>© 2025 Al Hayah Developments. All rights reserved.</p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Attach the HTML content to the email
+        message.attach(MIMEText(html_content, "html"))
+        
+        # Send the email
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login("cpt.ahmed2018@gmail.com", "yndxitnnalocuqkd")
+            server.send_message(message)
+        
+        return True
+    except Exception as e:
+        # Return the error instead of displaying it
+        return False
+
+# Initialize session states
+if 'form_submitted' not in st.session_state:
+    st.session_state.form_submitted = False
+if 'email_sent' not in st.session_state:
+    st.session_state.email_sent = False
+if 'form_data' not in st.session_state:
+    st.session_state.form_data = {}
 
 # Logo and Header
 st.markdown('<div class="header-area">', unsafe_allow_html=True)
@@ -185,151 +275,159 @@ st.markdown(f'<div class="logo-container"><img src="data:image/jpeg;base64,{get_
 st.markdown('<h2 class="sub-header">Property Inquiry Form</h2>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Initialize session state for form submission
-if 'form_submitted' not in st.session_state:
-    st.session_state.form_submitted = False
-
-# Form inputs
-with st.form("property_inquiry_form"):
-    st.markdown('<div class="form-section">', unsafe_allow_html=True)
-    
-    # Client Information
-    st.markdown('<h3 class="highlight">Client Information</h3>', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown('<p class="required">Report Date</p>', unsafe_allow_html=True)
-        report_date = st.date_input("Report Date", datetime.date.today(), label_visibility="collapsed")
+# Only show the form if not submitted
+if not st.session_state.form_submitted:
+    # Form inputs
+    with st.form("property_inquiry_form"):
+        st.markdown('<div class="form-section">', unsafe_allow_html=True)
         
-        st.markdown('<p class="required">Client Name</p>', unsafe_allow_html=True)
-        client_name = st.text_input("Client Name", label_visibility="collapsed")
-    with col2:
-        st.markdown('<p class="required">Client Phone Number</p>', unsafe_allow_html=True)
-        client_phone = st.text_input("Client Phone Number", label_visibility="collapsed")
-    
-    # Property Requirements
-    st.markdown('<h3 class="highlight">Property Requirements</h3>', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown('<p>Unit Type</p>', unsafe_allow_html=True)
-        unit_type = st.selectbox(
-            "Unit Type",
-            [
-                "Studio", "Apartment", "Duplex", "Penthouse", 
-                "Town House", "Twin House", "Villa", "Chalet",
-                "Commercial Space", "Administrative Space"
-            ],
-            label_visibility="collapsed"
-        )
-        
-        st.markdown('<p>Floor Type</p>', unsafe_allow_html=True)
-        floor_type = st.selectbox(
-            "Floor Type",
-            [
-                "Ground Floor", "Ground Floor with Garden", 
-                "Typical Floor", "Last Floor", 
-                "Last Floor with Roof"
-            ],
-            label_visibility="collapsed"
-        )
-        
-        st.markdown('<p>Unit Area (m²)</p>', unsafe_allow_html=True)
-        min_area, max_area = st.columns(2)
-        with min_area:
-            min_unit_area = st.number_input("Min Area", min_value=0, value=0, label_visibility="collapsed")
-        with max_area:
-            max_unit_area = st.number_input("Max Area", min_value=0, value=0, label_visibility="collapsed")
-    
-    with col2:
-        st.markdown('<p>Number of Rooms</p>', unsafe_allow_html=True)
-        num_rooms = st.number_input("Number of Rooms", min_value=0, value=0, label_visibility="collapsed")
-        
-        st.markdown('<p>Number of Bathrooms</p>', unsafe_allow_html=True)
-        num_bathrooms = st.number_input("Number of Bathrooms", min_value=0, value=0, label_visibility="collapsed")
-        
-        st.markdown('<p>Finishing Type</p>', unsafe_allow_html=True)
-        finishing_type = st.selectbox(
-            "Finishing Type",
-            ["Fully Finished", "Semi-Finished", "Core & Shell"],
-            label_visibility="collapsed"
-        )
-    
-    # Location and Financial Details
-    st.markdown('<h3 class="highlight">Location and Financial Details</h3>', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown('<p>Area</p>', unsafe_allow_html=True)
-        area = st.selectbox(
-            "Area",
-            [
-                "Sheikh Zayed", "October", "October Gardens", 
-                "Green Belt", "Green Revolution", "New Cairo", 
-                "6th Settlement", "Future City", "El Shorouk", 
-                "New Administrative Capital", "Ain Sokhna", 
-                "Red Sea", "North Coast"
-            ],
-            label_visibility="collapsed"
-        )
-        
-        st.markdown('<p>Budget (EGP)</p>', unsafe_allow_html=True)
-        budget = st.number_input("Budget", min_value=0, value=0, label_visibility="collapsed")
-    
-    with col2:
-        st.markdown('<p>Payment Method</p>', unsafe_allow_html=True)
-        payment_method = st.selectbox(
-            "Payment Method",
-            ["Cash", "Installments"],
-            label_visibility="collapsed"
-        )
-        
-        st.markdown('<p>Delivery Date</p>', unsafe_allow_html=True)
-        delivery_date = st.date_input("Delivery Date", min_value=datetime.date.today(), label_visibility="collapsed")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Submit button
-    submit_button = st.form_submit_button("Submit Inquiry")
-    
-    if submit_button:
-        # Validate form
-        if not client_name or not client_phone:
-            st.error("Please fill in all required fields: Client Name and Phone Number")
-        else:
-            st.session_state.form_submitted = True
-            st.session_state.form_data = {
-                "Report Date": report_date.strftime("%Y-%m-%d"),
-                "Client Name": client_name,
-                "Client Phone": client_phone,
-                "Unit Type": unit_type,
-                "Floor Type": floor_type,
-                "Unit Area": f"{min_unit_area} - {max_unit_area} m²",
-                "Number of Rooms": num_rooms,
-                "Number of Bathrooms": num_bathrooms,
-                "Finishing Type": finishing_type,
-                "Area": area,
-                "Budget": f"{budget:,} EGP",
-                "Payment Method": payment_method,
-                "Delivery Date": delivery_date.strftime("%Y-%m-%d")
-            }
+        # Client Information
+        st.markdown('<h3 class="highlight">Client Information</h3>', unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown('<p class="required">Report Date</p>', unsafe_allow_html=True)
+            report_date = st.date_input("Report Date", datetime.date.today(), label_visibility="collapsed")
             
-            # Save the form data to a JSON file for record keeping
-            try:
-                # Create a directory for submissions if it doesn't exist
-                submissions_dir = os.path.join(os.path.dirname(__file__), "submissions")
-                os.makedirs(submissions_dir, exist_ok=True)
+            st.markdown('<p class="required">Client Name</p>', unsafe_allow_html=True)
+            client_name = st.text_input("Client Name", label_visibility="collapsed")
+        with col2:
+            st.markdown('<p class="required">Client Phone Number</p>', unsafe_allow_html=True)
+            client_phone = st.text_input("Client Phone Number", label_visibility="collapsed")
+        
+        # Property Requirements
+        st.markdown('<h3 class="highlight">Property Requirements</h3>', unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown('<p>Unit Type</p>', unsafe_allow_html=True)
+            unit_type = st.selectbox(
+                "Unit Type",
+                [
+                    "Studio", "Apartment", "Duplex", "Penthouse", 
+                    "Town House", "Twin House", "Villa", "Chalet",
+                    "Commercial Space", "Administrative Space"
+                ],
+                label_visibility="collapsed"
+            )
+            
+            st.markdown('<p>Floor Type</p>', unsafe_allow_html=True)
+            floor_type = st.selectbox(
+                "Floor Type",
+                [
+                    "Ground Floor", "Ground Floor with Garden", 
+                    "Typical Floor", "Last Floor", 
+                    "Last Floor with Roof"
+                ],
+                label_visibility="collapsed"
+            )
+            
+            st.markdown('<p>Unit Area (m²)</p>', unsafe_allow_html=True)
+            min_area, max_area = st.columns(2)
+            with min_area:
+                min_unit_area = st.number_input("Min Area", min_value=0, value=0, label_visibility="collapsed")
+            with max_area:
+                max_unit_area = st.number_input("Max Area", min_value=0, value=0, label_visibility="collapsed")
+        
+        with col2:
+            st.markdown('<p>Number of Rooms</p>', unsafe_allow_html=True)
+            num_rooms = st.number_input("Number of Rooms", min_value=0, value=0, label_visibility="collapsed")
+            
+            st.markdown('<p>Number of Bathrooms</p>', unsafe_allow_html=True)
+            num_bathrooms = st.number_input("Number of Bathrooms", min_value=0, value=0, label_visibility="collapsed")
+            
+            st.markdown('<p>Finishing Type</p>', unsafe_allow_html=True)
+            finishing_type = st.selectbox(
+                "Finishing Type",
+                ["Fully Finished", "Semi-Finished", "Core & Shell"],
+                label_visibility="collapsed"
+            )
+        
+        # Location and Financial Details
+        st.markdown('<h3 class="highlight">Location and Financial Details</h3>', unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown('<p>Area</p>', unsafe_allow_html=True)
+            area = st.selectbox(
+                "Area",
+                [
+                    "Sheikh Zayed", "October", "October Gardens", 
+                    "Green Belt", "Green Revolution", "New Cairo", 
+                    "6th Settlement", "Future City", "El Shorouk", 
+                    "New Administrative Capital", "Ain Sokhna", 
+                    "Red Sea", "North Coast"
+                ],
+                label_visibility="collapsed"
+            )
+            
+            st.markdown('<p>Budget (EGP)</p>', unsafe_allow_html=True)
+            budget = st.number_input("Budget", min_value=0, value=0, label_visibility="collapsed")
+        
+        with col2:
+            st.markdown('<p>Payment Method</p>', unsafe_allow_html=True)
+            payment_method = st.selectbox(
+                "Payment Method",
+                ["Cash", "Installments"],
+                label_visibility="collapsed"
+            )
+            
+            st.markdown('<p>Delivery Date</p>', unsafe_allow_html=True)
+            delivery_date = st.date_input("Delivery Date", min_value=datetime.date.today(), label_visibility="collapsed")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Submit button
+        submit_button = st.form_submit_button("Submit Inquiry")
+        
+        if submit_button:
+            # Validate form
+            if not client_name or not client_phone:
+                st.error("Please fill in all required fields: Client Name and Phone Number")
+            else:
+                # Store form data in session state
+                st.session_state.form_data = {
+                    "Report Date": report_date.strftime("%Y-%m-%d"),
+                    "Client Name": client_name,
+                    "Client Phone": client_phone,
+                    "Unit Type": unit_type,
+                    "Floor Type": floor_type,
+                    "Unit Area": f"{min_unit_area} - {max_unit_area} m²",
+                    "Number of Rooms": num_rooms,
+                    "Number of Bathrooms": num_bathrooms,
+                    "Finishing Type": finishing_type,
+                    "Area": area,
+                    "Budget": f"{budget:,} EGP",
+                    "Payment Method": payment_method,
+                    "Delivery Date": delivery_date.strftime("%Y-%m-%d")
+                }
                 
-                # Generate a unique filename based on timestamp and client name
-                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                safe_name = ''.join(c if c.isalnum() else '_' for c in client_name)
-                filename = f"{timestamp}_{safe_name}.json"
+                # Save the form data to a JSON file for record keeping
+                try:
+                    # Create a directory for submissions if it doesn't exist
+                    submissions_dir = os.path.join(os.path.dirname(__file__), "submissions")
+                    os.makedirs(submissions_dir, exist_ok=True)
+                    
+                    # Generate a unique filename based on timestamp and client name
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    safe_name = ''.join(c if c.isalnum() else '_' for c in client_name)
+                    filename = f"{timestamp}_{safe_name}.json"
+                    
+                    # Save the data
+                    with open(os.path.join(submissions_dir, filename), 'w') as f:
+                        json.dump(st.session_state.form_data, f, indent=4)
+                except Exception:
+                    pass  # Silently handle file saving errors
                 
-                # Save the data
-                with open(os.path.join(submissions_dir, filename), 'w') as f:
-                    json.dump(st.session_state.form_data, f, indent=4)
-            except Exception as e:
-                st.warning(f"Could not save submission locally: {e}")
+                # Mark form as submitted
+                st.session_state.form_submitted = True
+                
+                # Send email in background (will be processed on next rerun)
+                st.session_state.email_sent = False
+                
+                # Force a rerun to show the success page
+                st.experimental_rerun()
 
-# Display results after form submission
+# If form is submitted, show success page
 if st.session_state.form_submitted:
+    # Display success message
     st.markdown('<div class="success-message">Form submitted successfully! A copy has been sent to our team.</div>', unsafe_allow_html=True)
     
     # Display the submitted data in a table format
@@ -345,110 +443,12 @@ if st.session_state.form_submitted:
     st.table(df_transposed)
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # Send email function - completely rewritten to avoid displaying HTML content
-    def send_email(form_data):
-        try:
-            # Email configuration
-            sender_email = "noreply@alhayadevelopments.com"
-            receiver_email = "cpt.ahmed2018@gmail.com"
-            
-            # Create message
-            message = MIMEMultipart()
-            message["From"] = sender_email
-            message["To"] = receiver_email
-            message["Subject"] = f"New Property Inquiry from {form_data['Client Name']}"
-            
-            # Create email body HTML without displaying it
-            html_content = f"""
-            <html>
-            <head>
-                <style>
-                    body {{
-                        font-family: Arial, sans-serif;
-                        line-height: 1.6;
-                        color: #333;
-                    }}
-                    .header {{
-                        background-color: {primary_color};
-                        color: white;
-                        padding: 20px;
-                        text-align: center;
-                    }}
-                    table {{
-                        border-collapse: collapse;
-                        width: 100%;
-                        margin: 20px 0;
-                    }}
-                    th, td {{
-                        border: 1px solid #dddddd;
-                        text-align: left;
-                        padding: 12px;
-                    }}
-                    th {{
-                        background-color: {primary_color};
-                        color: white;
-                    }}
-                    tr:nth-child(even) {{
-                        background-color: #f9f9f9;
-                    }}
-                    .footer {{
-                        margin-top: 30px;
-                        font-size: 0.9em;
-                        color: #666;
-                        text-align: center;
-                    }}
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h2>New Property Inquiry - Al Hayah Developments</h2>
-                </div>
-                <p>A new property inquiry has been submitted with the following details:</p>
-                <table>
-                    <tr>
-                        <th>Field</th>
-                        <th>Value</th>
-                    </tr>
-            """
-            
-            # Add form data to email body without displaying it
-            for key, value in form_data.items():
-                html_content += f"""
-                    <tr>
-                        <td>{key}</td>
-                        <td>{value}</td>
-                    </tr>
-                """
-            
-            html_content += """
-                </table>
-                <p>Please contact the client as soon as possible.</p>
-                <div class="footer">
-                    <p>© 2025 Al Hayah Developments. All rights reserved.</p>
-                </div>
-            </body>
-            </html>
-            """
-            
-            # Attach the HTML content to the email without displaying it
-            message.attach(MIMEText(html_content, "html"))
-            
-            # Send the email
-            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-                server.login("cpt.ahmed2018@gmail.com", "yndxitnnalocuqkd")
-                server.send_message(message)
-            
-            return True
-        except Exception as e:
-            st.error(f"Error sending email: {e}")
-            return False
-    
-    # Call the send_email function without displaying its return value
-    if send_email(st.session_state.form_data):
-        # Success message already displayed above
-        pass
-    else:
-        st.error("There was an issue sending the email. Please try again or contact support.")
+    # Send email if not already sent
+    if not st.session_state.email_sent and st.session_state.form_data:
+        # Send email without displaying any output
+        email_success = send_inquiry_email(st.session_state.form_data)
+        # Mark email as sent regardless of success to prevent multiple attempts
+        st.session_state.email_sent = True
 
 # Footer
 st.markdown(f"""
