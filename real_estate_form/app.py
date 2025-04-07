@@ -442,7 +442,7 @@ if st.session_state.form_submitted:
             # In a production environment, uncomment this code to actually send the email
             """
             with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-                server.login("cpt.ahmed2018@gmail.com", "Eyad_2025_19032022")
+                server.login("cpt.ahmed2018@gmail.com", "yndx itnn aloc uqkd")
                 server.send_message(message)
             
             
