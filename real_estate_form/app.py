@@ -348,9 +348,6 @@ if st.session_state.form_submitted:
     # Send email function
     def send_email(form_data):
         try:
-            # Add debug logging to verify form_data
-            st.write("Debug - Form Data:", form_data)
-            
             # Email configuration
             sender_email = "noreply@alhayadevelopments.com"
             receiver_email = "cpt.ahmed2018@gmail.com"
@@ -414,9 +411,8 @@ if st.session_state.form_submitted:
                     </tr>
             """
             
-            # Debug logging for form data items
+            # Add form data to email body
             for key, value in form_data.items():
-                st.write(f"Debug - Adding to email: {key} = {value}")
                 email_body += f"""
                     <tr>
                         <td>{key}</td>
@@ -436,14 +432,6 @@ if st.session_state.form_submitted:
             
             # Attach the HTML content to the email
             message.attach(MIMEText(email_body, "html"))
-            
-            # For demonstration purposes, we'll show a preview of the email
-            st.markdown('<div class="email-preview">', unsafe_allow_html=True)
-            st.markdown('<div class="email-preview-header">Email Preview (Will be sent to cpt.ahmed2018@gmail.com)</div>', unsafe_allow_html=True)
-            st.markdown(f"<strong>Subject:</strong> New Property Inquiry from {form_data['Client Name']}", unsafe_allow_html=True)
-            st.markdown("<strong>Email Content:</strong>", unsafe_allow_html=True)
-            st.markdown(email_body, unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
             
             # In a production environment, uncomment this code to actually send the email
          
