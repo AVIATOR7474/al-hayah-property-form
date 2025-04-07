@@ -464,6 +464,6 @@ if st.session_state.form_submitted:
 st.markdown(f"""
 <footer>
     <p>© 2025 Al Hayah Developments. All rights reserved.</p>
-    <p>For inquiries, please contact us at info@alhayadevelopments.com</p>
+    <p>For inquiries, please contact us at 00201288359654</p>
 </footer>
 """, unsafe_allow_html=True)
