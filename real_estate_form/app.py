@@ -3,8 +3,6 @@ import datetime
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import pandas as pd
-import base64
 import os
 import json
 
@@ -12,165 +10,16 @@ import json
 st.set_page_config(
     page_title="Al Hayah Developments - Property Inquiry Form",
     page_icon="🏢",
-    layout="centered",
-    initial_sidebar_state="collapsed"
+    layout="centered"
 )
-
-# Function to load and display the logo
-def get_base64_of_bin_file(bin_file):
-    with open(bin_file, 'rb') as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
-
-# Color scheme based on the logo
-primary_color = "#C8A23F"  # Gold color from logo
-secondary_color = "#000000"  # Black color from logo
-accent_color = "#8A6D3B"  # Darker gold for accents
-light_color = "#F9F6EF"  # Light cream color for backgrounds
-text_color = "#333333"  # Dark gray for text
-
-# Custom CSS for styling
-st.markdown(f"""
-<style>
-    .main-header {{
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: {primary_color};
-        text-align: center;
-        margin-bottom: 0.5rem;
-    }}
-    .sub-header {{
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: {accent_color};
-        margin-bottom: 1rem;
-        text-align: center;
-    }}
-    .form-section {{
-        background-color: {light_color};
-        padding: 25px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        border: 1px solid #e0e0e0;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }}
-    .success-message {{
-        background-color: #d4edda;
-        color: #155724;
-        padding: 20px;
-        border-radius: 5px;
-        text-align: center;
-        margin: 20px 0;
-        font-size: 1.2rem;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }}
-    .stButton>button {{
-        background-color: {primary_color};
-        color: white;
-        font-weight: bold;
-        width: 100%;
-        padding: 12px 0;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }}
-    .stButton>button:hover {{
-        background-color: {accent_color};
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }}
-    footer {{
-        text-align: center;
-        margin-top: 40px;
-        padding-top: 20px;
-        border-top: 1px solid #e0e0e0;
-        color: {text_color};
-        font-size: 0.9rem;
-    }}
-    .logo-container {{
-        text-align: center;
-        margin-bottom: 10px;
-        padding: 20px 0;
-    }}
-    .result-table {{
-        margin-top: 30px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        border-radius: 10px;
-        overflow: hidden;
-    }}
-    .stDateInput>div>div>input {{
-        text-align: center;
-    }}
-    .highlight {{
-        background-color: {light_color};
-        padding: 15px;
-        border-radius: 5px;
-        border-left: 5px solid {primary_color};
-        margin-bottom: 20px;
-        font-weight: 600;
-        color: {accent_color};
-    }}
-    .required:after {{
-        content: " *";
-        color: #e74c3c;
-        font-weight: bold;
-    }}
-    .stSelectbox [data-baseweb=select] {{
-        border-radius: 5px;
-    }}
-    .stNumberInput [data-baseweb=input] {{
-        border-radius: 5px;
-    }}
-    .stTextInput [data-baseweb=input] {{
-        border-radius: 5px;
-    }}
-    .stDateInput [data-baseweb=input] {{
-        border-radius: 5px;
-    }}
-    /* Custom styling for the table */
-    .dataframe {{
-        width: 100%;
-        border-collapse: collapse;
-    }}
-    .dataframe th {{
-        background-color: {primary_color};
-        color: white;
-        padding: 12px;
-        text-align: left;
-    }}
-    .dataframe td {{
-        padding: 12px;
-        border-bottom: 1px solid #e0e0e0;
-    }}
-    .dataframe tr:nth-child(even) {{
-        background-color: {light_color};
-    }}
-    /* Page background */
-    .stApp {{
-        background: linear-gradient(to bottom, white, {light_color});
-    }}
-    /* Header area with logo */
-    .header-area {{
-        background-color: white;
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }}
-</style>
-""", unsafe_allow_html=True)
 
 # Initialize session state for form submission
 if 'form_submitted' not in st.session_state:
     st.session_state.form_submitted = False
 
-# Logo and Header
-st.markdown('<div class="header-area">', unsafe_allow_html=True)
-logo_path = os.path.join(os.path.dirname(__file__), "assets", "logo.jpg")
-st.markdown(f'<div class="logo-container"><img src="data:image/jpeg;base64,{get_base64_of_bin_file(logo_path)}" width="400"></div>', unsafe_allow_html=True)
-st.markdown('<h2 class="sub-header">Property Inquiry Form</h2>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
+# Simple header
+st.title("Al Hayah Developments")
+st.header("Property Inquiry Form")
 
 # Define email sending function
 def send_inquiry_email(form_data):
@@ -185,80 +34,14 @@ def send_inquiry_email(form_data):
         message["To"] = receiver_email
         message["Subject"] = f"New Property Inquiry from {form_data['Client Name']}"
         
-        # Create email body HTML
-        html_content = f"""
-        <html>
-        <head>
-            <style>
-                body {{
-                    font-family: Arial, sans-serif;
-                    line-height: 1.6;
-                    color: #333;
-                }}
-                .header {{
-                    background-color: {primary_color};
-                    color: white;
-                    padding: 20px;
-                    text-align: center;
-                }}
-                table {{
-                    border-collapse: collapse;
-                    width: 100%;
-                    margin: 20px 0;
-                }}
-                th, td {{
-                    border: 1px solid #dddddd;
-                    text-align: left;
-                    padding: 12px;
-                }}
-                th {{
-                    background-color: {primary_color};
-                    color: white;
-                }}
-                tr:nth-child(even) {{
-                    background-color: #f9f9f9;
-                }}
-                .footer {{
-                    margin-top: 30px;
-                    font-size: 0.9em;
-                    color: #666;
-                    text-align: center;
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <h2>New Property Inquiry - Al Hayah Developments</h2>
-            </div>
-            <p>A new property inquiry has been submitted with the following details:</p>
-            <table>
-                <tr>
-                    <th>Field</th>
-                    <th>Value</th>
-                </tr>
-        """
-        
-        # Add form data to email body
+        # Create simple email body
+        email_text = "A new property inquiry has been submitted with the following details:\n\n"
         for key, value in form_data.items():
-            html_content += f"""
-                <tr>
-                    <td>{key}</td>
-                    <td>{value}</td>
-                </tr>
-            """
+            email_text += f"{key}: {value}\n"
+        email_text += "\nPlease contact the client as soon as possible."
         
-        html_content += """
-            </table>
-            <p>Please contact the client as soon as possible.</p>
-            <div class="footer">
-                <p>© 2025 Al Hayah Developments. All rights reserved.</p>
-            </div>
-        </body>
-        </html>
-        """
-        
-        # Attach the HTML content to the email
-        message.attach(MIMEText(html_content, "html"))
+        # Attach the text content to the email
+        message.attach(MIMEText(email_text, "plain"))
         
         # Send the email
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
@@ -272,97 +55,68 @@ def send_inquiry_email(form_data):
 # Display form or results based on submission status
 if not st.session_state.form_submitted:
     # Client Information
-    st.markdown('<h3 class="highlight">Client Information</h3>', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown('<p class="required">Report Date</p>', unsafe_allow_html=True)
-        report_date = st.date_input("Report Date", datetime.date.today(), label_visibility="collapsed")
-        
-        st.markdown('<p class="required">Client Name</p>', unsafe_allow_html=True)
-        client_name = st.text_input("Client Name", label_visibility="collapsed")
-    with col2:
-        st.markdown('<p class="required">Client Phone Number</p>', unsafe_allow_html=True)
-        client_phone = st.text_input("Client Phone Number", label_visibility="collapsed")
+    st.subheader("Client Information")
+    report_date = st.date_input("Report Date", datetime.date.today())
+    client_name = st.text_input("Client Name")
+    client_phone = st.text_input("Client Phone Number")
     
     # Property Requirements
-    st.markdown('<h3 class="highlight">Property Requirements</h3>', unsafe_allow_html=True)
+    st.subheader("Property Requirements")
+    unit_type = st.selectbox(
+        "Unit Type",
+        [
+            "Studio", "Apartment", "Duplex", "Penthouse", 
+            "Town House", "Twin House", "Villa", "Chalet",
+            "Commercial Space", "Administrative Space"
+        ]
+    )
+    
+    floor_type = st.selectbox(
+        "Floor Type",
+        [
+            "Ground Floor", "Ground Floor with Garden", 
+            "Typical Floor", "Last Floor", 
+            "Last Floor with Roof"
+        ]
+    )
+    
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('<p>Unit Type</p>', unsafe_allow_html=True)
-        unit_type = st.selectbox(
-            "Unit Type",
-            [
-                "Studio", "Apartment", "Duplex", "Penthouse", 
-                "Town House", "Twin House", "Villa", "Chalet",
-                "Commercial Space", "Administrative Space"
-            ],
-            label_visibility="collapsed"
-        )
-        
-        st.markdown('<p>Floor Type</p>', unsafe_allow_html=True)
-        floor_type = st.selectbox(
-            "Floor Type",
-            [
-                "Ground Floor", "Ground Floor with Garden", 
-                "Typical Floor", "Last Floor", 
-                "Last Floor with Roof"
-            ],
-            label_visibility="collapsed"
-        )
-        
-        st.markdown('<p>Unit Area (m²)</p>', unsafe_allow_html=True)
-        min_area, max_area = st.columns(2)
-        with min_area:
-            min_unit_area = st.number_input("Min Area", min_value=0, value=0, label_visibility="collapsed")
-        with max_area:
-            max_unit_area = st.number_input("Max Area", min_value=0, value=0, label_visibility="collapsed")
-    
+        min_unit_area = st.number_input("Min Area (m²)", min_value=0, value=0)
     with col2:
-        st.markdown('<p>Number of Rooms</p>', unsafe_allow_html=True)
-        num_rooms = st.number_input("Number of Rooms", min_value=0, value=0, label_visibility="collapsed")
-        
-        st.markdown('<p>Number of Bathrooms</p>', unsafe_allow_html=True)
-        num_bathrooms = st.number_input("Number of Bathrooms", min_value=0, value=0, label_visibility="collapsed")
-        
-        st.markdown('<p>Finishing Type</p>', unsafe_allow_html=True)
-        finishing_type = st.selectbox(
-            "Finishing Type",
-            ["Fully Finished", "Semi-Finished", "Core & Shell"],
-            label_visibility="collapsed"
-        )
+        max_unit_area = st.number_input("Max Area (m²)", min_value=0, value=0)
+    
+    num_rooms = st.number_input("Number of Rooms", min_value=0, value=0)
+    num_bathrooms = st.number_input("Number of Bathrooms", min_value=0, value=0)
+    
+    finishing_type = st.selectbox(
+        "Finishing Type",
+        ["Fully Finished", "Semi-Finished", "Core & Shell"]
+    )
     
     # Location and Financial Details
-    st.markdown('<h3 class="highlight">Location and Financial Details</h3>', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown('<p>Area</p>', unsafe_allow_html=True)
-        area = st.selectbox(
-            "Area",
-            [
-                "Sheikh Zayed", "October", "October Gardens", 
-                "Green Belt", "Green Revolution", "New Cairo", 
-                "6th Settlement", "Future City", "El Shorouk", 
-                "New Administrative Capital", "Ain Sokhna", 
-                "Red Sea", "North Coast"
-            ],
-            label_visibility="collapsed"
-        )
-        
-        st.markdown('<p>Budget (EGP)</p>', unsafe_allow_html=True)
-        budget = st.number_input("Budget", min_value=0, value=0, label_visibility="collapsed")
+    st.subheader("Location and Financial Details")
+    area = st.selectbox(
+        "Area",
+        [
+            "Sheikh Zayed", "October", "October Gardens", 
+            "Green Belt", "Green Revolution", "New Cairo", 
+            "6th Settlement", "Future City", "El Shorouk", 
+            "New Administrative Capital", "Ain Sokhna", 
+            "Red Sea", "North Coast"
+        ]
+    )
     
-    with col2:
-        st.markdown('<p>Payment Method</p>', unsafe_allow_html=True)
-        payment_method = st.selectbox(
-            "Payment Method",
-            ["Cash", "Installments"],
-            label_visibility="collapsed"
-        )
-        
-        st.markdown('<p>Delivery Date</p>', unsafe_allow_html=True)
-        delivery_date = st.date_input("Delivery Date", min_value=datetime.date.today(), label_visibility="collapsed")
+    budget = st.number_input("Budget (EGP)", min_value=0, value=0)
     
-    # Submit button (outside of form to avoid form submission issues)
+    payment_method = st.selectbox(
+        "Payment Method",
+        ["Cash", "Installments"]
+    )
+    
+    delivery_date = st.date_input("Delivery Date", min_value=datetime.date.today())
+    
+    # Submit button
     if st.button("Submit Inquiry"):
         # Validate form
         if not client_name or not client_phone:
@@ -376,8 +130,8 @@ if not st.session_state.form_submitted:
                 "Unit Type": unit_type,
                 "Floor Type": floor_type,
                 "Unit Area": f"{min_unit_area} - {max_unit_area} m²",
-                "Number of Rooms": num_rooms,
-                "Number of Bathrooms": num_bathrooms,
+                "Number of Rooms": str(num_rooms),
+                "Number of Bathrooms": str(num_bathrooms),
                 "Finishing Type": finishing_type,
                 "Area": area,
                 "Budget": f"{budget:,} EGP",
@@ -415,44 +169,25 @@ if not st.session_state.form_submitted:
             # Show success message
             st.success("Form submitted successfully! A copy has been sent to our team.")
             
-            # Display the submitted data in a table format
-            st.markdown('<h3 class="sub-header">Property Inquiry Details</h3>', unsafe_allow_html=True)
-            
-            # Convert the form data to a DataFrame for better display
-            df = pd.DataFrame([form_data])
-            df_transposed = df.T.reset_index()
-            df_transposed.columns = ['Field', 'Value']
-            
-            # Style the table
-            st.markdown('<div class="result-table">', unsafe_allow_html=True)
-            st.table(df_transposed)
-            st.markdown('</div>', unsafe_allow_html=True)
+            # Display the submitted data in a simple format
+            st.subheader("Property Inquiry Details")
+            for key, value in form_data.items():
+                st.write(f"**{key}:** {value}")
 
 else:
     # Display success message
-    st.markdown('<div class="success-message">Form submitted successfully! A copy has been sent to our team.</div>', unsafe_allow_html=True)
+    st.success("Form submitted successfully! A copy has been sent to our team.")
     
-    # Display the submitted data in a table format
-    st.markdown('<h3 class="sub-header">Property Inquiry Details</h3>', unsafe_allow_html=True)
-    
-    # Convert the form data to a DataFrame for better display
-    df = pd.DataFrame([st.session_state.form_data])
-    df_transposed = df.T.reset_index()
-    df_transposed.columns = ['Field', 'Value']
-    
-    # Style the table
-    st.markdown('<div class="result-table">', unsafe_allow_html=True)
-    st.table(df_transposed)
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Display the submitted data in a simple format
+    st.subheader("Property Inquiry Details")
+    for key, value in st.session_state.form_data.items():
+        st.write(f"**{key}:** {value}")
     
     # Add a button to submit another inquiry
     if st.button("Submit Another Inquiry"):
         st.session_state.form_submitted = False
 
-# Footer
-st.markdown(f"""
-<footer>
-    <p>© 2025 Al Hayah Developments. All rights reserved.</p>
-    <p>For inquiries, please contact us @ Mobile Number -  01288359654 - </p>
-</footer>
-""", unsafe_allow_html=True)
+# Simple footer
+st.write("---")
+st.write("© 2025 Al Hayah Developments. All rights reserved.")
+st.write("For inquiries, please contact us @ Mobile Number - 01288359654")
