@@ -161,8 +161,18 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# Define email sending function outside of the main flow
-# This prevents it from being executed during UI rendering
+# Initialize session state for form submission
+if 'form_submitted' not in st.session_state:
+    st.session_state.form_submitted = False
+
+# Logo and Header
+st.markdown('<div class="header-area">', unsafe_allow_html=True)
+logo_path = os.path.join(os.path.dirname(__file__), "assets", "logo.jpg")
+st.markdown(f'<div class="logo-container"><img src="data:image/jpeg;base64,{get_base64_of_bin_file(logo_path)}" width="400"></div>', unsafe_allow_html=True)
+st.markdown('<h2 class="sub-header">Property Inquiry Form</h2>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
+
+# Define email sending function
 def send_inquiry_email(form_data):
     try:
         # Email configuration
@@ -175,7 +185,7 @@ def send_inquiry_email(form_data):
         message["To"] = receiver_email
         message["Subject"] = f"New Property Inquiry from {form_data['Client Name']}"
         
-        # Email body
+        # Create email body HTML
         html_content = f"""
         <html>
         <head>
@@ -257,183 +267,168 @@ def send_inquiry_email(form_data):
         
         return True
     except Exception as e:
-        # Return the error instead of displaying it
         return False
 
-# Initialize session states
-if 'form_submitted' not in st.session_state:
-    st.session_state.form_submitted = False
-if 'email_sent' not in st.session_state:
-    st.session_state.email_sent = False
-if 'form_data' not in st.session_state:
-    st.session_state.form_data = {}
-
-# Logo and Header
-st.markdown('<div class="header-area">', unsafe_allow_html=True)
-logo_path = os.path.join(os.path.dirname(__file__), "assets", "logo.jpg")
-st.markdown(f'<div class="logo-container"><img src="data:image/jpeg;base64,{get_base64_of_bin_file(logo_path)}" width="400"></div>', unsafe_allow_html=True)
-st.markdown('<h2 class="sub-header">Property Inquiry Form</h2>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
-
-# Form submission handler function
-def handle_form_submission():
-    # Store form data in session state
-    st.session_state.form_data = {
-        "Report Date": report_date.strftime("%Y-%m-%d"),
-        "Client Name": client_name,
-        "Client Phone": client_phone,
-        "Unit Type": unit_type,
-        "Floor Type": floor_type,
-        "Unit Area": f"{min_unit_area} - {max_unit_area} m²",
-        "Number of Rooms": num_rooms,
-        "Number of Bathrooms": num_bathrooms,
-        "Finishing Type": finishing_type,
-        "Area": area,
-        "Budget": f"{budget:,} EGP",
-        "Payment Method": payment_method,
-        "Delivery Date": delivery_date.strftime("%Y-%m-%d")
-    }
-    
-    # Save the form data to a JSON file for record keeping
-    try:
-        # Create a directory for submissions if it doesn't exist
-        submissions_dir = os.path.join(os.path.dirname(__file__), "submissions")
-        os.makedirs(submissions_dir, exist_ok=True)
-        
-        # Generate a unique filename based on timestamp and client name
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        safe_name = ''.join(c if c.isalnum() else '_' for c in client_name)
-        filename = f"{timestamp}_{safe_name}.json"
-        
-        # Save the data
-        with open(os.path.join(submissions_dir, filename), 'w') as f:
-            json.dump(st.session_state.form_data, f, indent=4)
-    except Exception:
-        pass  # Silently handle file saving errors
-    
-    # Mark form as submitted
-    st.session_state.form_submitted = True
-    
-    # Send email immediately without displaying any output
-    try:
-        send_inquiry_email(st.session_state.form_data)
-        st.session_state.email_sent = True
-    except:
-        # Silently handle email sending errors
-        st.session_state.email_sent = False
-
-# Only show the form if not submitted
+# Display form or results based on submission status
 if not st.session_state.form_submitted:
-    # Form inputs
-    with st.form("property_inquiry_form"):
-        st.markdown('<div class="form-section">', unsafe_allow_html=True)
+    # Client Information
+    st.markdown('<h3 class="highlight">Client Information</h3>', unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown('<p class="required">Report Date</p>', unsafe_allow_html=True)
+        report_date = st.date_input("Report Date", datetime.date.today(), label_visibility="collapsed")
         
-        # Client Information
-        st.markdown('<h3 class="highlight">Client Information</h3>', unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown('<p class="required">Report Date</p>', unsafe_allow_html=True)
-            report_date = st.date_input("Report Date", datetime.date.today(), label_visibility="collapsed")
+        st.markdown('<p class="required">Client Name</p>', unsafe_allow_html=True)
+        client_name = st.text_input("Client Name", label_visibility="collapsed")
+    with col2:
+        st.markdown('<p class="required">Client Phone Number</p>', unsafe_allow_html=True)
+        client_phone = st.text_input("Client Phone Number", label_visibility="collapsed")
+    
+    # Property Requirements
+    st.markdown('<h3 class="highlight">Property Requirements</h3>', unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown('<p>Unit Type</p>', unsafe_allow_html=True)
+        unit_type = st.selectbox(
+            "Unit Type",
+            [
+                "Studio", "Apartment", "Duplex", "Penthouse", 
+                "Town House", "Twin House", "Villa", "Chalet",
+                "Commercial Space", "Administrative Space"
+            ],
+            label_visibility="collapsed"
+        )
+        
+        st.markdown('<p>Floor Type</p>', unsafe_allow_html=True)
+        floor_type = st.selectbox(
+            "Floor Type",
+            [
+                "Ground Floor", "Ground Floor with Garden", 
+                "Typical Floor", "Last Floor", 
+                "Last Floor with Roof"
+            ],
+            label_visibility="collapsed"
+        )
+        
+        st.markdown('<p>Unit Area (m²)</p>', unsafe_allow_html=True)
+        min_area, max_area = st.columns(2)
+        with min_area:
+            min_unit_area = st.number_input("Min Area", min_value=0, value=0, label_visibility="collapsed")
+        with max_area:
+            max_unit_area = st.number_input("Max Area", min_value=0, value=0, label_visibility="collapsed")
+    
+    with col2:
+        st.markdown('<p>Number of Rooms</p>', unsafe_allow_html=True)
+        num_rooms = st.number_input("Number of Rooms", min_value=0, value=0, label_visibility="collapsed")
+        
+        st.markdown('<p>Number of Bathrooms</p>', unsafe_allow_html=True)
+        num_bathrooms = st.number_input("Number of Bathrooms", min_value=0, value=0, label_visibility="collapsed")
+        
+        st.markdown('<p>Finishing Type</p>', unsafe_allow_html=True)
+        finishing_type = st.selectbox(
+            "Finishing Type",
+            ["Fully Finished", "Semi-Finished", "Core & Shell"],
+            label_visibility="collapsed"
+        )
+    
+    # Location and Financial Details
+    st.markdown('<h3 class="highlight">Location and Financial Details</h3>', unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown('<p>Area</p>', unsafe_allow_html=True)
+        area = st.selectbox(
+            "Area",
+            [
+                "Sheikh Zayed", "October", "October Gardens", 
+                "Green Belt", "Green Revolution", "New Cairo", 
+                "6th Settlement", "Future City", "El Shorouk", 
+                "New Administrative Capital", "Ain Sokhna", 
+                "Red Sea", "North Coast"
+            ],
+            label_visibility="collapsed"
+        )
+        
+        st.markdown('<p>Budget (EGP)</p>', unsafe_allow_html=True)
+        budget = st.number_input("Budget", min_value=0, value=0, label_visibility="collapsed")
+    
+    with col2:
+        st.markdown('<p>Payment Method</p>', unsafe_allow_html=True)
+        payment_method = st.selectbox(
+            "Payment Method",
+            ["Cash", "Installments"],
+            label_visibility="collapsed"
+        )
+        
+        st.markdown('<p>Delivery Date</p>', unsafe_allow_html=True)
+        delivery_date = st.date_input("Delivery Date", min_value=datetime.date.today(), label_visibility="collapsed")
+    
+    # Submit button (outside of form to avoid form submission issues)
+    if st.button("Submit Inquiry"):
+        # Validate form
+        if not client_name or not client_phone:
+            st.error("Please fill in all required fields: Client Name and Phone Number")
+        else:
+            # Store form data
+            form_data = {
+                "Report Date": report_date.strftime("%Y-%m-%d"),
+                "Client Name": client_name,
+                "Client Phone": client_phone,
+                "Unit Type": unit_type,
+                "Floor Type": floor_type,
+                "Unit Area": f"{min_unit_area} - {max_unit_area} m²",
+                "Number of Rooms": num_rooms,
+                "Number of Bathrooms": num_bathrooms,
+                "Finishing Type": finishing_type,
+                "Area": area,
+                "Budget": f"{budget:,} EGP",
+                "Payment Method": payment_method,
+                "Delivery Date": delivery_date.strftime("%Y-%m-%d")
+            }
             
-            st.markdown('<p class="required">Client Name</p>', unsafe_allow_html=True)
-            client_name = st.text_input("Client Name", label_visibility="collapsed")
-        with col2:
-            st.markdown('<p class="required">Client Phone Number</p>', unsafe_allow_html=True)
-            client_phone = st.text_input("Client Phone Number", label_visibility="collapsed")
-        
-        # Property Requirements
-        st.markdown('<h3 class="highlight">Property Requirements</h3>', unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown('<p>Unit Type</p>', unsafe_allow_html=True)
-            unit_type = st.selectbox(
-                "Unit Type",
-                [
-                    "Studio", "Apartment", "Duplex", "Penthouse", 
-                    "Town House", "Twin House", "Villa", "Chalet",
-                    "Commercial Space", "Administrative Space"
-                ],
-                label_visibility="collapsed"
-            )
+            # Save the form data to a JSON file for record keeping
+            try:
+                # Create a directory for submissions if it doesn't exist
+                submissions_dir = os.path.join(os.path.dirname(__file__), "submissions")
+                os.makedirs(submissions_dir, exist_ok=True)
+                
+                # Generate a unique filename based on timestamp and client name
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                safe_name = ''.join(c if c.isalnum() else '_' for c in client_name)
+                filename = f"{timestamp}_{safe_name}.json"
+                
+                # Save the data
+                with open(os.path.join(submissions_dir, filename), 'w') as f:
+                    json.dump(form_data, f, indent=4)
+            except Exception:
+                pass  # Silently handle file saving errors
             
-            st.markdown('<p>Floor Type</p>', unsafe_allow_html=True)
-            floor_type = st.selectbox(
-                "Floor Type",
-                [
-                    "Ground Floor", "Ground Floor with Garden", 
-                    "Typical Floor", "Last Floor", 
-                    "Last Floor with Roof"
-                ],
-                label_visibility="collapsed"
-            )
+            # Send email silently
+            try:
+                send_inquiry_email(form_data)
+            except:
+                pass
             
-            st.markdown('<p>Unit Area (m²)</p>', unsafe_allow_html=True)
-            min_area, max_area = st.columns(2)
-            with min_area:
-                min_unit_area = st.number_input("Min Area", min_value=0, value=0, label_visibility="collapsed")
-            with max_area:
-                max_unit_area = st.number_input("Max Area", min_value=0, value=0, label_visibility="collapsed")
-        
-        with col2:
-            st.markdown('<p>Number of Rooms</p>', unsafe_allow_html=True)
-            num_rooms = st.number_input("Number of Rooms", min_value=0, value=0, label_visibility="collapsed")
+            # Store data in session state for display
+            st.session_state.form_data = form_data
+            st.session_state.form_submitted = True
             
-            st.markdown('<p>Number of Bathrooms</p>', unsafe_allow_html=True)
-            num_bathrooms = st.number_input("Number of Bathrooms", min_value=0, value=0, label_visibility="collapsed")
+            # Show success message
+            st.success("Form submitted successfully! A copy has been sent to our team.")
             
-            st.markdown('<p>Finishing Type</p>', unsafe_allow_html=True)
-            finishing_type = st.selectbox(
-                "Finishing Type",
-                ["Fully Finished", "Semi-Finished", "Core & Shell"],
-                label_visibility="collapsed"
-            )
-        
-        # Location and Financial Details
-        st.markdown('<h3 class="highlight">Location and Financial Details</h3>', unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown('<p>Area</p>', unsafe_allow_html=True)
-            area = st.selectbox(
-                "Area",
-                [
-                    "Sheikh Zayed", "October", "October Gardens", 
-                    "Green Belt", "Green Revolution", "New Cairo", 
-                    "6th Settlement", "Future City", "El Shorouk", 
-                    "New Administrative Capital", "Ain Sokhna", 
-                    "Red Sea", "North Coast"
-                ],
-                label_visibility="collapsed"
-            )
+            # Display the submitted data in a table format
+            st.markdown('<h3 class="sub-header">Property Inquiry Details</h3>', unsafe_allow_html=True)
             
-            st.markdown('<p>Budget (EGP)</p>', unsafe_allow_html=True)
-            budget = st.number_input("Budget", min_value=0, value=0, label_visibility="collapsed")
-        
-        with col2:
-            st.markdown('<p>Payment Method</p>', unsafe_allow_html=True)
-            payment_method = st.selectbox(
-                "Payment Method",
-                ["Cash", "Installments"],
-                label_visibility="collapsed"
-            )
+            # Convert the form data to a DataFrame for better display
+            df = pd.DataFrame([form_data])
+            df_transposed = df.T.reset_index()
+            df_transposed.columns = ['Field', 'Value']
             
-            st.markdown('<p>Delivery Date</p>', unsafe_allow_html=True)
-            delivery_date = st.date_input("Delivery Date", min_value=datetime.date.today(), label_visibility="collapsed")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Submit button
-        submit_button = st.form_submit_button("Submit Inquiry")
-        
-        if submit_button:
-            # Validate form
-            if not client_name or not client_phone:
-                st.error("Please fill in all required fields: Client Name and Phone Number")
-            else:
-                # Handle form submission
-                handle_form_submission()
+            # Style the table
+            st.markdown('<div class="result-table">', unsafe_allow_html=True)
+            st.table(df_transposed)
+            st.markdown('</div>', unsafe_allow_html=True)
 
-# If form is submitted, show success page
-if st.session_state.form_submitted:
+else:
     # Display success message
     st.markdown('<div class="success-message">Form submitted successfully! A copy has been sent to our team.</div>', unsafe_allow_html=True)
     
@@ -449,6 +444,10 @@ if st.session_state.form_submitted:
     st.markdown('<div class="result-table">', unsafe_allow_html=True)
     st.table(df_transposed)
     st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Add a button to submit another inquiry
+    if st.button("Submit Another Inquiry"):
+        st.session_state.form_submitted = False
 
 # Footer
 st.markdown(f"""
